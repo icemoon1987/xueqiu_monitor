@@ -143,8 +143,8 @@ class XueqiuMonitor(object):
         title = rb_result["cube_id"] + self.__cube_map[rb_result["cube_id"]] + "调仓啦~~(潘文海)"
 
         mail_detail += "</tbody></table>\n"
-        #mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
-        mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+        mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+        #mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
 
         return
 
