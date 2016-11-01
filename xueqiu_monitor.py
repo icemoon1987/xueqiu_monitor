@@ -22,31 +22,34 @@ sys.setdefaultencoding('utf-8')
 
 class XueqiuMonitor(object):
 
+    def __load_config_file(self, config_file):
+        with open(config_file, "r") as f:
+            return json.loads(f.read())
+
 
     def __init__(self):
-        self.__cube_map = {
-                    "ZH928259": "成长之王策略",
-                    "ZH218796": "小盘股王子"
-                }
 
-        self.__log_dir = "./log"
-        self.__tmp_dir = "./tmp"
-        self.__backup_dir = "./backup"
-        self.__result_dir = "./result"
+        config_json = self.__load_config_file("./conf/config.json")
+
+        self.__cube_map = config_json["cubes"]
+        self.__log_dir = config_json.get("log_dir", "./log")
+        self.__timestamp_dir = config_json.get("timestamp_dir", "./timestamps")
+        self.__record_dir = config_json.get("record_dir", "./record")
+        self.__rb_dir = config_json.get("rb_dir", "./rb")
 
         if not os.path.exists(self.__log_dir):
             os.mkdir(self.__log_dir)
 
-        if not os.path.exists(self.__tmp_dir):
-            os.mkdir(self.__tmp_dir)
+        if not os.path.exists(self.__timestamp_dir):
+            os.mkdir(self.__timestamp_dir)
 
-        if not os.path.exists(self.__backup_dir):
-            os.mkdir(self.__backup_dir)
+        if not os.path.exists(self.__record_dir):
+            os.mkdir(self.__record_dir)
 
-        if not os.path.exists(self.__result_dir):
-            os.mkdir(self.__result_dir)
+        if not os.path.exists(self.__rb_dir):
+            os.mkdir(self.__rb_dir)
 
-        logging.basicConfig(level=logging.DEBUG, filename="%s/%s.log" % (self.__log_dir, __file__[:-3]), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
+        logging.basicConfig(level=logging.DEBUG, filename="%s/%s.log.%s" % (self.__log_dir, __file__[:-3], datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
         self.__logger = logging.getLogger(__name__)
         self.__timegap = 30
         self.__header = { 'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Connection':'keep-alive', 'Host':'xueqiu.com' }
@@ -143,35 +146,35 @@ class XueqiuMonitor(object):
         title = rb_result["cube_id"] + self.__cube_map[rb_result["cube_id"]] + "调仓啦~~(潘文海)"
 
         mail_detail += "</tbody></table>\n"
-        mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
-        #mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+        #mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+        mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
 
         return
 
 
     def __store_rb_timestamp(self, rb_result):
-        with open("%s/%s.timestamp" % (self.__tmp_dir, rb_result["cube_id"]), "w") as f:
+        with open("%s/%s.timestamp" % (self.__timestamp_dir, rb_result["cube_id"]), "w") as f:
             f.write(str(rb_result["rb_timestamp"]))
         return
 
 
     def __get_latest_rb_timestamp(self, cube_id):
         try:
-            with open("%s/%s.timestamp" % (self.__tmp_dir, cube_id), "r") as f:
+            with open("%s/%s.timestamp" % (self.__timestamp_dir, cube_id), "r") as f:
                 return int(f.read())
         except Exception, ex:
             return 0
 
 
     def __store_record(self, rb_result):
-        with open("%s/%s.record" % (self.__backup_dir, rb_result["cube_id"]), "a") as f:
+        with open("%s/%s.record" % (self.__record_dir, rb_result["cube_id"]), "a") as f:
             f.write(json.dumps(rb_result))
             f.write("\n")
         return
 
 
     def __store_result(self, rb_result):
-        with open("%s/%s.%d" % (self.__result_dir, rb_result["cube_id"], rb_result["rb_timestamp"]), "w") as f:
+        with open("%s/%s.%d" % (self.__rb_dir, rb_result["cube_id"], rb_result["rb_timestamp"]), "w") as f:
             f.write(json.dumps(rb_result))
             f.write("\n")
         return

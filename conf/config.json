@@ -1,0 +1,13 @@
+{
+    "log_dir": "./log",
+    "timestamp_dir": "./timestamps",
+    "rb_dir": "./rb",
+    "record_dir": "./record",
+    "deal_dir": "./deal",
+
+    "cubes" :
+    {
+        "ZH928259": "成长之王策略",
+        "ZH218796": "小盘股王子"
+    }
+}

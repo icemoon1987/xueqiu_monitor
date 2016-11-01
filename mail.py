@@ -8,8 +8,8 @@ from email.MIMEMultipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 mail_host="smtp.163.com"
-mail_user=""
-mail_pwd=""
+mail_user="panwenhai1987"
+mail_pwd="PWH@crscd301"
 mail_postfix="163.com"
 
 def sendmail(to_list,subject,content):
