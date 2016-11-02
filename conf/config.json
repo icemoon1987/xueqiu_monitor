@@ -1,4 +1,12 @@
 {
+    "mail_config":
+    {
+        "host" : "",
+        "user" : "",
+        "pwd" : "",
+        "postfix" : ""
+    },
+
     "log_dir": "./log",
     "timestamp_dir": "./timestamps",
     "rb_dir": "./rb",
@@ -9,5 +17,17 @@
     {
         "ZH928259": "成长之王策略",
         "ZH218796": "小盘股王子"
+    },
+
+    "dealer_config" :
+    {
+        "email": ["546674175@qq.com", "182101630@qq.com", "81616822@qq.com", "373894584@qq.com"],
+        "cubes_amount":
+        {
+            "ZH928259": 10000.0,
+            "ZH218796": 0.0
+        }
     }
 }
+
+

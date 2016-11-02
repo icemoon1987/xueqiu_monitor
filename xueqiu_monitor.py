@@ -3,6 +3,7 @@
 
 import re
 import mail
+import math
 import hashlib
 import json
 import os
@@ -36,6 +37,8 @@ class XueqiuMonitor(object):
         self.__timestamp_dir = config_json.get("timestamp_dir", "./timestamps")
         self.__record_dir = config_json.get("record_dir", "./record")
         self.__rb_dir = config_json.get("rb_dir", "./rb")
+        self.__deal_dir = config_json.get("deal_dir", "./deal")
+        self.__dealer_config = config_json.get("dealer_config", {})
 
         if not os.path.exists(self.__log_dir):
             os.mkdir(self.__log_dir)
@@ -48,6 +51,9 @@ class XueqiuMonitor(object):
 
         if not os.path.exists(self.__rb_dir):
             os.mkdir(self.__rb_dir)
+
+        if not os.path.exists(self.__deal_dir):
+            os.mkdir(self.__deal_dir)
 
         logging.basicConfig(level=logging.DEBUG, filename="%s/%s.log.%s" % (self.__log_dir, __file__[:-3], datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
         self.__logger = logging.getLogger(__name__)
@@ -116,7 +122,7 @@ class XueqiuMonitor(object):
         return result
 
 
-    def __send_mail(self, rb_result):
+    def __send_mail(self, rb_result, deal_list):
 
         mail_detail = "<p>调仓时间：" + str(datetime.fromtimestamp(int(rb_result["rb_timestamp"]) / 1000)) + "</p>\n"
         mail_detail += "<table border=\"1\"><tbody>\n"
@@ -146,8 +152,31 @@ class XueqiuMonitor(object):
         title = rb_result["cube_id"] + self.__cube_map[rb_result["cube_id"]] + "调仓啦~~(潘文海)"
 
         mail_detail += "</tbody></table>\n"
-        #mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
-        mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+
+        mail_detail += "<br/>\n"
+        mail_detail += "<p>生成订单:</p>\n"
+        mail_detail += "<table border=\"1\"><tbody>\n"
+        mail_detail += u"<tr>\n"
+        mail_detail += u"<td>动作</td>\n"
+        mail_detail += u"<td>股票id</td>\n"
+        mail_detail += u"<td>交易价格</td>\n"
+        mail_detail += u"<td>交易股数</td>\n"
+        mail_detail += u"</tr>\n"
+
+        for deal in deal_list:
+            mail_detail += u"<tr>\n"
+            mail_detail += u"<td>" + str(deal["action"]) + "</td>\n"
+            mail_detail += u"<td>" + str(deal["stock_id"]) + "</td>\n"
+            mail_detail += u"<td>" + str(deal["price"]) + "</td>\n"
+            mail_detail += u"<td>" + str(deal["share"]) + "</td>\n"
+            mail_detail += u"</tr>\n"
+
+        mail_detail += "</tbody></table>\n"
+
+        if "email" in self.__dealer_config:
+            #mail.sendhtmlmail(self.__dealer_config["email"], title,mail_detail.encode("utf-8", "ignore"))
+
+            mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
 
         return
 
@@ -164,6 +193,59 @@ class XueqiuMonitor(object):
                 return int(f.read())
         except Exception, ex:
             return 0
+
+    
+    def __rb2deal(self, rb_result):
+
+        deal_list = []
+
+        if rb_result["cube_id"] in self.__dealer_config["cubes_amount"]:
+            max_amount = self.__dealer_config["cubes_amount"][rb_result["cube_id"]]
+
+            for rb_action in rb_result["trade_action"]:
+                stock_id = rb_action["stock_id"]
+                price = rb_action["price"]
+                pre_rate = rb_action["pre_rate"] / 100
+                post_rate = rb_action["post_rate"] / 100
+
+                if post_rate > pre_rate:
+                    action = "buy"
+                else:
+                    action = "sell"
+
+                share = int(abs(post_rate - pre_rate) * max_amount / price) / 100 * 100
+
+                """
+                print stock_id
+                print post_rate
+                print pre_rate
+                print price
+                print abs(post_rate - pre_rate)
+                print max_amount
+                print abs(post_rate - pre_rate) * max_amount
+                print abs(post_rate - pre_rate) * max_amount / price
+                print share
+                """
+
+                if share > 0:
+                    deal = {}
+                    deal["stock_id"] = stock_id
+                    deal["action"] = action
+                    deal["price"] = price
+                    deal["share"] = share
+
+                    deal_list.append(deal)
+
+        return deal_list
+
+
+    def __store_deal(self, deal):
+        file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"])
+
+        with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
+            f.write("\n")
+
+        return
 
 
     def __store_record(self, rb_result):
@@ -217,12 +299,18 @@ class XueqiuMonitor(object):
                             self.__store_record(rb_result)
                             continue
 
-                        # 一次正常的调仓，记录并通知
+                        # 一次正常的调仓，记录、触发、通知
                         self.__logger.info("NEW REBALANCE! store result. cube_id=%s" % (cube_id))
                         self.__store_result(rb_result)
                         self.__store_rb_timestamp(rb_result)
                         self.__store_record(rb_result)
-                        self.__send_mail(rb_result)
+                        
+                        deal_list = self.__rb2deal(rb_result)
+
+                        for deal in deal_list:
+                            self.__store_deal(deal)
+
+                        self.__send_mail(rb_result, deal_list)
 
                     # 一次旧的调仓记录，跳过
                     else:
@@ -230,9 +318,10 @@ class XueqiuMonitor(object):
 
                 time.sleep(self.__timegap)
             except Exception, ex:
+                print str(ex)
+                self.__logger.error("network seems down! try to refresh cookie")
                 self.__refresh_cookie()
                 time.sleep(self.__timegap)
-                self.__logger.error("network seems down! try to refresh cookie")
 
         return
 

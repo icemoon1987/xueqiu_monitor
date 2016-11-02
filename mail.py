@@ -4,13 +4,17 @@
 import smtplib
 import email
 import mimetypes
+import json
 from email.MIMEMultipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-mail_host="smtp.163.com"
-mail_user="panwenhai1987"
-mail_pwd="PWH@crscd301"
-mail_postfix="163.com"
+with open("./conf/config.json", "r") as f:
+    config = json.loads(f.read())
+
+mail_host = config["mail_config"]["host"]
+mail_user = config["mail_config"]["user"]
+mail_pwd = config["mail_config"]["pwd"]
+mail_postfix =  config["mail_config"]["postfix"]
 
 def sendmail(to_list,subject,content):
   # translation
