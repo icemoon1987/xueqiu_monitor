@@ -174,9 +174,9 @@ class XueqiuMonitor(object):
         mail_detail += "</tbody></table>\n"
 
         if "email" in self.__dealer_config:
-            #mail.sendhtmlmail(self.__dealer_config["email"], title,mail_detail.encode("utf-8", "ignore"))
+            mail.sendhtmlmail(self.__dealer_config["email"], title,mail_detail.encode("utf-8", "ignore"))
 
-            mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+            #mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
 
         return
 
@@ -203,7 +203,7 @@ class XueqiuMonitor(object):
             max_amount = self.__dealer_config["cubes_amount"][rb_result["cube_id"]]
 
             for rb_action in rb_result["trade_action"]:
-                stock_id = rb_action["stock_id"]
+                stock_id = rb_action["stock_id"][2:]
                 price = rb_action["price"]
                 pre_rate = rb_action["pre_rate"] / 100
                 post_rate = rb_action["post_rate"] / 100
@@ -240,7 +240,7 @@ class XueqiuMonitor(object):
 
 
     def __store_deal(self, deal):
-        file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"])
+        file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
 
         with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
             f.write("\n")
