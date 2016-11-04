@@ -152,7 +152,7 @@ class AutoTrader(object):
             else:
                 continue
 
-            #shutil.move(self.__deal_dir + "/" + file_name, self.__success_dir + "/" + file_name)
+            shutil.move(self.__deal_dir + "/" + file_name, self.__success_dir + "/" + file_name)
 
             time.sleep(2)
 
