@@ -63,6 +63,23 @@ class XueqiuMonitor(object):
 
         return
 
+    def __is_tradetime(self, time_obj):
+
+        day_str = time_obj.strftime("%Y-%m-%d")
+
+        starttime1 = datetime.strptime(day_str + " 09:20:00", "%Y-%m-%d %H:%M:%S")
+        endtime1 = datetime.strptime(day_str + " 11:40:00", "%Y-%m-%d %H:%M:%S")
+
+        starttime2 = datetime.strptime(day_str + " 12:50:00", "%Y-%m-%d %H:%M:%S")
+        endtime2 = datetime.strptime(day_str + " 15:10:00", "%Y-%m-%d %H:%M:%S")
+
+        if time_obj >= starttime1 and time_obj <= endtime1:
+            return True
+
+        if time_obj >= starttime2 and time_obj <= endtime2:
+            return True
+
+        return False
 
     def __get_rebalance_id(self, cube_id):
         """ 获取一个组合的最新调仓策略id """
@@ -173,10 +190,13 @@ class XueqiuMonitor(object):
 
         mail_detail += "</tbody></table>\n"
 
-        if "email" in self.__dealer_config:
-            mail.sendhtmlmail(self.__dealer_config["email"], title,mail_detail.encode("utf-8", "ignore"))
 
-            #mail.sendhtmlmail(['546674175@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
+        if "email" in self.__dealer_config:
+
+            for mail_address in self.__dealer_config["email"]:
+                mail.sendhtmlmail([mail_address], title,mail_detail.encode("utf-8", "ignore"))
+
+            #mail.sendhtmlmail(['546674175@qq.com', '182101630@qq.com', '81616822@qq.com', '373894584@qq.com'], title,mail_detail.encode("utf-8", "ignore"))
 
         return
 
@@ -278,6 +298,11 @@ class XueqiuMonitor(object):
 
         while True:
             try:
+                if not self.__is_tradetime(datetime.now()):
+                    self.__logger.debug("not trade time")
+                    time.sleep(self.__timegap)
+                    continue
+
                 for cube_id in self.__cube_map:
                     rb_result = self.__crawl_rebalance(cube_id)
                     rb_timestamp = int(rb_result["rb_timestamp"])
@@ -320,7 +345,11 @@ class XueqiuMonitor(object):
             except Exception, ex:
                 print str(ex)
                 self.__logger.error("network seems down! try to refresh cookie")
-                self.__refresh_cookie()
+                try:
+                    self.__refresh_cookie()
+                except Exception, ex:
+                    pass
+
                 time.sleep(self.__timegap)
 
         return
