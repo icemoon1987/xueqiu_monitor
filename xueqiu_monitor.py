@@ -86,7 +86,7 @@ class XueqiuMonitor(object):
 
         url = "https://xueqiu.com/P/%s" % (cube_id)
         req = urllib2.Request(url, headers=self.__header)
-        resp = self.__urlopener.open(req)
+        resp = self.__urlopener.open(req, timeout=10)
         html = resp.readlines()
 
         for line in html:
@@ -105,13 +105,15 @@ class XueqiuMonitor(object):
 
         # 获取最新调仓策略id
         rb_id = self.__get_rebalance_id(cube_id)
+        self.__logger.debug("__get_rebalance_id")
 
         # 获取调仓策略
         url = "https://xueqiu.com/cubes/rebalancing/show_origin.json?rb_id=%d&cube_symbol=%s" % (rb_id, cube_id)
         req = urllib2.Request(url, headers=self.__header)
-        resp = self.__urlopener.open(req)
+        resp = self.__urlopener.open(req, timeout=10)
         html = resp.read()
         json_obj = json.loads(html)
+        self.__logger.debug("crawl rebalance")
 
         result = {}
         result["cube_id"] = cube_id
@@ -287,7 +289,7 @@ class XueqiuMonitor(object):
 
         url = "https://xueqiu.com"
         req = urllib2.Request(url, headers=self.__header)
-        resp = self.__urlopener.open(req)
+        resp = self.__urlopener.open(req, timeout=10)
         return
 
 
@@ -298,11 +300,13 @@ class XueqiuMonitor(object):
 
         while True:
             try:
+                # 检查是否是交易时间
                 if not self.__is_tradetime(datetime.now()):
                     self.__logger.debug("not trade time")
                     time.sleep(self.__timegap)
                     continue
 
+                # 顺序抓取、处理每个组合的调仓记录
                 for cube_id in self.__cube_map:
                     rb_result = self.__crawl_rebalance(cube_id)
                     rb_timestamp = int(rb_result["rb_timestamp"])
@@ -342,6 +346,7 @@ class XueqiuMonitor(object):
                         self.__logger.debug("skip old rebalance. cube_id=%s" % (cube_id))
 
                 time.sleep(self.__timegap)
+
             except Exception, ex:
                 print str(ex)
                 self.__logger.error("network seems down! try to refresh cookie")
