@@ -1,0 +1,251 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>auto_trader.sikuli</h2> <a href="auto_trader.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="kw">import</span> time
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">import</span> json
+<span class="kw">import</span> sys
+<span class="kw">import</span> os
+<span class="kw">import</span> logging
+<span class="kw">import</span> shutil
+
+config_str=<span class="str">'''
+{
+    "deal_dir" : "E:/deal",
+    "success_dir" : "E:/success",
+    "fail_dir" : "E:/fail",
+    "log_dir" : "E:/log",
+    "app_path" : "5.0"
+}
+'''</span>
+
+<span class="kw">class</span> AutoTrader(object):
+    <span class="kw">def</span> __load_config(self, config_str):
+        <span class="kw">return</span> json.loads(config_str)
+
+    <span class="kw">def</span> __init__(self, config_str):
+        config = self.__load_config(config_str)
+
+        self.__deal_dir = config[<span class="str">"deal_dir"</span>]
+        self.__success_dir = config.get(<span class="str">"success_dir"</span>, <span class="str">"./success"</span>)
+        self.__fail_dir = config.get(<span class="str">"fail_dir"</span>, <span class="str">"./fail"</span>)
+        self.__log_dir = config.get(<span class="str">"log_dir"</span>, <span class="str">"./log"</span>)
+        self.__app_path = config.get(<span class="str">"app_path"</span>)
+
+        <span class="kw">if</span> <span class="kw">not</span> os.path.exists(self.__deal_dir):
+            <span class="kw">print</span> <span class="str">"deal_dir=%s not found!"</span> %(self.__deal_dir)
+            quit()
+
+        <span class="kw">if</span> <span class="kw">not</span> os.path.exists(self.__log_dir):
+            os.mkdir(self.__log_dir)
+
+        <span class="kw">if</span> <span class="kw">not</span> os.path.exists(self.__success_dir):
+            os.mkdir(self.__success_dir)
+
+        <span class="kw">if</span> <span class="kw">not</span> os.path.exists(self.__fail_dir):
+            os.mkdir(self.__fail_dir)
+
+        <span class="kw">if</span> <span class="kw">not</span> os.path.exists(self.__log_dir):
+            os.mkdir(self.__log_dir)
+
+        logging.basicConfig(level=logging.DEBUG, filename=<span class="str">"%s/%s.log.%s"</span> % (self.__log_dir, <span class="str">"auto_trader"</span>, datetime.now().strftime(<span class="str">"%Y%m%d"</span>)), filemode=<span class="str">"a"</span>, format=<span class="str">"%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s"</span>)
+        <span class="kw">return</span>
+
+    <span class="kw">def</span> __health_check(self):
+        switchApp(self.__app_path)
+        <span class="skw">type</span>(Key.F1)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="kw">if</span> <span class="kw">not</span> exists(<img src="buy_label.png" />):
+            <span class="kw">return</span> False
+
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+        <span class="skw">type</span>(Key.F2)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="kw">if</span> <span class="kw">not</span> exists(<img src="sell_label.png" />):
+            <span class="kw">return</span> False
+
+        <span class="kw">if</span> exists(<img src="1478605440532.png" />):
+            <span class="skw">click</span>(<img src="1478605440532.png" />)
+        <span class="kw">return</span> True
+
+    <span class="kw">def</span> __open_buy_page(self):
+        switchApp(self.__app_path)
+        self.__health_check()
+        <span class="skw">type</span>(Key.F1)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="kw">if</span> <span class="kw">not</span> exists(<img src="buy_label.png" />):
+            <span class="kw">return</span> False
+        <span class="kw">return</span> True
+
+    <span class="kw">def</span> __open_sell_page(self):
+        switchApp(self.__app_path)
+        self.__health_check()
+        <span class="skw">type</span>(Key.F2)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="kw">if</span> <span class="kw">not</span> exists(<img src="sell_label.png" />):
+            <span class="kw">return</span> False
+        <span class="kw">return</span> True
+
+    <span class="kw">def</span> buy(self, stock_id, price, share):
+
+        self.__open_buy_page()
+        <span class="skw">type</span>(stock_id)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(price)
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(share)
+        <span class="skw">type</span>(<span class="str">"b"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(<span class="str">"y"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(<span class="str">"y"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        time.<span class="skw">sleep</span>(<span class="dig">0.2</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        time.<span class="skw">sleep</span>(<span class="dig">0.2</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">if</span> exists(<img src="1478605440532.png" />):
+            <span class="skw">click</span>(<img src="1478605440532.png" />)
+
+        <span class="kw">return</span> True
+
+
+    <span class="kw">def</span> sell(self, stock_id, price, share):
+
+        self.__open_sell_page()
+
+        <span class="skw">type</span>(stock_id)
+        time.<span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(price)
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(share)
+        <span class="skw">type</span>(<span class="str">"s"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(<span class="str">"y"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(<span class="str">"y"</span>)
+        time.<span class="skw">sleep</span>(<span class="dig">0.3</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        time.<span class="skw">sleep</span>(<span class="dig">0.2</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        time.<span class="skw">sleep</span>(<span class="dig">0.2</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">if</span> exists(<img src="1478605440532.png" />):
+            <span class="skw">click</span>(<img src="1478605440532.png" />)
+
+        <span class="kw">return</span> True
+
+    <span class="kw">def</span> __oneround(self):
+        file_list = os.listdir(self.__deal_dir)
+
+        <span class="kw">for</span> file_name <span class="kw">in</span> file_list:
+            <span class="cmt">#002216_9.56_500_sell</span>
+            ary = file_name.split(<span class="str">"_"</span>)
+            stock_id = ary[<span class="dig">0</span>]
+            price = ary[<span class="dig">1</span>]
+            share = ary[<span class="dig">2</span>]
+            action = ary[<span class="dig">3</span>]
+
+            <span class="kw">if</span> action == <span class="str">"buy"</span>:
+                self.buy(stock_id, price, share)
+            <span class="kw">elif</span> action == <span class="str">"sell"</span>:
+                self.sell(stock_id, price, share)
+            <span class="kw">else</span>:
+                <span class="kw">continue</span>
+
+            shutil.move(self.__deal_dir + <span class="str">"/"</span> + file_name, self.__success_dir + <span class="str">"/"</span> + file_name)
+
+            time.<span class="skw">sleep</span>(<span class="dig">2</span>)
+
+        <span class="kw">return</span> True
+
+    <span class="kw">def</span> start(self):
+        <span class="kw">while</span> True:
+            self.__oneround()
+            <span class="kw">if</span> <span class="kw">not</span> self.__health_check():
+                <span class="kw">print</span> <span class="str">"not healthy"</span>
+                switchApp(self.__app_path)
+                <span class="skw">type</span>(Key.ENTER)
+                <span class="kw">if</span> exists(<img src="1478605440532.png" />):
+                    <span class="skw">click</span>(<img src="1478605440532.png" />)
+            time.<span class="skw">sleep</span>(<span class="dig">3</span>)
+        <span class="kw">return</span>
+
+trader = AutoTrader(config_str)
+trader.start()
+</pre>
+</body>
+</html>

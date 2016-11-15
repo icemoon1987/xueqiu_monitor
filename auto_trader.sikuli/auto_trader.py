@@ -9,10 +9,10 @@ import shutil
 config_str='''
 {
     "deal_dir" : "E:/deal",
-    "success_dir" : "./success",
-    "fail_dir" : "./fail",
-    "log_dir" : "./log",
-    "app_path" : "网上股票交易"
+    "success_dir" : "E:/success",
+    "fail_dir" : "E:/fail",
+    "log_dir" : "E:/log",
+    "app_path" : "5.0"
 }
 '''
 
@@ -61,7 +61,9 @@ class AutoTrader(object):
         time.sleep(0.5)
         if not exists("sell_label.png"):
             return False
-    
+        
+        if exists("1478605440532.png"):
+            click("1478605440532.png")   
         return True
 
     def __open_buy_page(self):
@@ -102,8 +104,8 @@ class AutoTrader(object):
         type(Key.ENTER)
         time.sleep(0.2)
         type(Key.ENTER)
-        if exists("confirm.png"):
-            click("confirm.png")     
+        if exists("1478605440532.png"):
+            click("1478605440532.png")     
 
         return True
 
@@ -129,8 +131,8 @@ class AutoTrader(object):
         type(Key.ENTER)
         time.sleep(0.2)
         type(Key.ENTER)
-        if exists("confirm.png"):
-            click("confirm.png")     
+        if exists("1478605440532.png"):
+            click("1478605440532.png")     
 
         return True
 
@@ -162,10 +164,11 @@ class AutoTrader(object):
         while True:
             self.__oneround()
             if not self.__health_check():
+                print "not healthy"
                 switchApp(self.__app_path)
                 type(Key.ENTER)
-                if exists("confirm.png"):
-                    click("confirm.png")     
+                if exists("1478605440532.png"):
+                    click("1478605440532.png")     
             time.sleep(3)
         return
 
