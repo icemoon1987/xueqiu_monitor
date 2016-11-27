@@ -105,7 +105,6 @@ class XueqiuMonitor(object):
 
         # 获取最新调仓策略id
         rb_id = self.__get_rebalance_id(cube_id)
-        self.__logger.debug("__get_rebalance_id")
 
         # 获取调仓策略
         url = "https://xueqiu.com/cubes/rebalancing/show_origin.json?rb_id=%d&cube_symbol=%s" % (rb_id, cube_id)
@@ -113,7 +112,6 @@ class XueqiuMonitor(object):
         resp = self.__urlopener.open(req, timeout=10)
         html = resp.read()
         json_obj = json.loads(html)
-        self.__logger.debug("crawl rebalance")
 
         result = {}
         result["cube_id"] = cube_id
@@ -249,7 +247,10 @@ class XueqiuMonitor(object):
                 print share
                 """
 
-                if share > 0:
+                #if share == 0:
+                    #share = 100
+
+                if share != 0:
                     deal = {}
                     deal["stock_id"] = stock_id
                     deal["action"] = action
@@ -265,6 +266,9 @@ class XueqiuMonitor(object):
         file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
 
         with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
+            f.write("\n")
+            
+        with open("%s/%s" % ("./deal2", file_name), "w") as f:
             f.write("\n")
 
         return
@@ -302,7 +306,7 @@ class XueqiuMonitor(object):
             try:
                 # 检查是否是交易时间
                 if not self.__is_tradetime(datetime.now()):
-                    self.__logger.debug("not trade time")
+                    self.__logger.debug("not time")
                     time.sleep(self.__timegap)
                     continue
 
@@ -348,8 +352,7 @@ class XueqiuMonitor(object):
                 time.sleep(self.__timegap)
 
             except Exception, ex:
-                print str(ex)
-                self.__logger.error("network seems down! try to refresh cookie")
+                self.__logger.error(str(ex))
                 try:
                     self.__refresh_cookie()
                 except Exception, ex:
