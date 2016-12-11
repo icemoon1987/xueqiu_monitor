@@ -2,15 +2,19 @@
     "mail_config":
     {
         "host" : "smtp.163.com",
-        "user" : "sunada2005",
-        "pwd" : "Honey_2013",
+        "user" : "panwenhai1987",
+        "pwd" : "",
         "postfix" : "163.com"
     },
     "month_money":300,
-    "cube":
+    "cube_fixed":
     {
         "sh510880":"红利ETF",
         "sh510900":"H股ETF"
+    },
+    "cube_value":
+    {
+        "sz159915":"创业板"
     },
     "start":"2016-11",
     "trade_date":"11,15,16,17,18",

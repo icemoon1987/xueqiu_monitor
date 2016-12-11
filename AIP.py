@@ -23,7 +23,8 @@ class AIP():
 
         self.__mail = config["mail_config"]
         self.__month_money = config["month_money"]
-        self.__cube = config["cube"]
+        self.__cube_fixed = config["cube_fixed"]
+        self.__cube_value = config["cube_value"]
         self.__last = datetime.datetime.strptime(config["start"],"%Y-%m")
         tmp = config["trade_date"].encode('utf-8').split(',')
         self.__trade_date = [int(m) for m in tmp]
@@ -118,39 +119,43 @@ class AIP():
         return
 
     def AIP_fixedMonthMoney(self):
+        deal_list = []
+        for cube_id in self.__cube_fixed:
+            net = self.__get_net(cube_id)
+            share = int(self.__month_money / net / 100) * 100
+            deal = {}
+            deal["stock_id"] = cube_id
+            deal["price"] = net
+            deal["share"] = share
+            deal["action"] = "buy"
+            deal["stock_name"] = self.__cube_fixed[cube_id]
+            self.__store_deal(deal)
+            deal_list.append(deal)
+
+        return deal_list
+
+    def AIP_valueAvergaging(self):
+        return 1
+
+    def AIP(self):
         while True:
-            try:
-                res = self.__is_trade_time(datetime.datetime.now())
-                #res=1 表示不在定投日期内；2 表示该月已经定投；3 表示不在定投日规则定投时间内；0表示可定投
-                if res == 1 or res == 2:
-                    # break;
-                    time.sleep(self.__timegap_day)
-                    continue
-                elif res == 3:
-                    time.sleep(self.__timegap_min)
-                    continue
+            res = self.__is_trade_time(datetime.datetime.now())
+            print res
+            #res=1 表示不在定投日期内；2 表示该月已经定投；3 表示不在定投日规则定投时间内；0表示可定投
+            if res == 1 or res == 2:
+                # break;
+                time.sleep(self.__timegap_day)
+                continue
+            elif res == 3:
+                time.sleep(self.__timegap_min)
+                continue
 
-                deal_list = []
-                for cube_id in self.__cube:
-                    net = self.__get_net(cube_id)
-                    share = int(self.__month_money / net / 100) * 100
-                    deal = {}
-                    deal["stock_id"] = cube_id
-                    deal["price"] = net
-                    deal["share"] = share
-                    deal["action"] = "buy"
-                    deal["stock_name"] = self.__cube[cube_id]
-                    self.__store_deal(deal)
-                    deal_list.append(deal)
+            deal_list = self.AIP_fixedMonthMoney()
+            self.AIP_valueAvergaging()
 
-                self.__last = self.__today
-                self.__send_mail(deal_list)
-                time.sleep(self.__timegap)
-
-            except Exception,ex:
-
-                pass
+            self.__last = self.__today
+            self.__send_mail(deal_list)
 
 if __name__ == "__main__":
     aip = AIP()
-    aip.AIP_fixedMonthMoney()
+    aip.AIP()
