@@ -29,21 +29,26 @@ class AIP():
         tmp = config["trade_date"].encode('utf-8').split(',')
         self.__trade_date = [int(m) for m in tmp]
         self.__today = datetime.datetime.today()
-        self.__timegap_day = 24*60*60
         self.__timegap_min = 60*30
+        self.__timegap_day = 24*60*60 - self.__timegap_min
         self.__deal_dir = config["deal_dir"]
+        self.__log_dir = config["log_dir"]
+        self.__record_dir = config["record_dir"]
         self.__dealer_config = config.get("dealer_config", {})
+
 
     def __is_trade_time(self, time_obj):
         if not time_obj.day in self.__trade_date:
             return 1
         if self.__today.month == self.__last.month and self.__today.year == self.__last.year:
             return 2
-
-        starttime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 13:25:00", "%Y-%m-%d %H:%M:%S")
-        endtime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 15:00:00", "%Y-%m-%d %H:%M:%S")
-        if time_obj < starttime or time_obj > endtime:
+        if time_obj.weekday() == 5 or time_obj.weekday() == 6:
             return 3
+
+        starttime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 13:00:00", "%Y-%m-%d %H:%M:%S")
+        endtime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 23:00:00", "%Y-%m-%d %H:%M:%S")
+        if time_obj < starttime or time_obj > endtime:
+            return 4
         return 0
 
     def __get_net(self, code):
@@ -57,6 +62,12 @@ class AIP():
         file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
         print file_name
         with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
+            f.write("\n")
+        return
+
+    def __store_record(self, deal):
+        with open("%s/%s.record" % (self.__record_dir, deal["stock_id"]), "a") as f:
+            f.write(json.dumps(deal))
             f.write("\n")
         return
 
@@ -130,6 +141,7 @@ class AIP():
             deal["action"] = "buy"
             deal["stock_name"] = self.__cube_fixed[cube_id]
             self.__store_deal(deal)
+            self.__store_record(deal)
             deal_list.append(deal)
 
         return deal_list
@@ -141,12 +153,12 @@ class AIP():
         while True:
             res = self.__is_trade_time(datetime.datetime.now())
             print res
-            #res=1 表示不在定投日期内；2 表示该月已经定投；3 表示不在定投日规则定投时间内；0表示可定投
-            if res == 1 or res == 2:
+            #res=1 表示不在定投日期内；2 表示该月已经定投；3 表示周末；4.表示不在定投日规则定投时间内；0表示可定投
+            if res == 1 or res == 2 or res == 3:
                 # break;
                 time.sleep(self.__timegap_day)
                 continue
-            elif res == 3:
+            elif res == 4:
                 time.sleep(self.__timegap_min)
                 continue
 
