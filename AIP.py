@@ -46,7 +46,7 @@ class AIP():
             return 3
 
         starttime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 13:00:00", "%Y-%m-%d %H:%M:%S")
-        endtime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 23:00:00", "%Y-%m-%d %H:%M:%S")
+        endtime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " 15:00:00", "%Y-%m-%d %H:%M:%S")
         if time_obj < starttime or time_obj > endtime:
             return 4
         return 0
