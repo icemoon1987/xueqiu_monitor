@@ -268,9 +268,6 @@ class XueqiuMonitor(object):
         with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
             f.write("\n")
             
-        with open("%s/%s" % ("./deal2", file_name), "w") as f:
-            f.write("\n")
-
         return
 
 
