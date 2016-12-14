@@ -30,8 +30,6 @@ class AIP():
         tmp = config["trade_date"].encode('utf-8').split(',')
         self.__trade_date = [int(m) for m in tmp]
         self.__today = datetime.datetime.today()
-        self.__timegap_min = 60*30
-        self.__timegap_day = 24*60*60 - self.__timegap_min
         self.__deal_dir = config["deal_dir"]
         self.__log_dir = config["log_dir"]
         self.__record_dir = config["record_dir"]
