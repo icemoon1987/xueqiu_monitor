@@ -17,8 +17,12 @@
         "sz159915":"创业板"
     },
     "start":"2016-11",
-    "trade_date":"11,15,16,17,18",
+    "trade_date":"14,15,16,17,18",
     "deal_dir":"./deal",
+    "log_dir": "./log",
+    "record_dir": "./record",
+    "start_min": "13:00:00",
+    "end_min":"15:00:00",
     "dealer_config" :
     {
         "email": ["sunada2005@163.com"],
