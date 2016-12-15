@@ -12,6 +12,7 @@ import datetime
 import time
 import urllib2
 import mail
+import os
 
 class AIP():
     def __load_config_file(self, filename):
@@ -25,32 +26,38 @@ class AIP():
         self.__month_money = config["month_money"]
         self.__cube_fixed = config["cube_fixed"]
         self.__cube_value = config["cube_value"]
-        self.__last = datetime.datetime.strptime(config["start"],"%Y-%m")
+        self.__last = ""
         tmp = config["trade_date"].encode('utf-8').split(',')
         self.__trade_date = [int(m) for m in tmp]
         self.__today = datetime.datetime.today()
-        self.__timegap_min = 60*30
-        self.__timegap_day = 24*60*60 - self.__timegap_min
         self.__deal_dir = config["deal_dir"]
         self.__log_dir = config["log_dir"]
         self.__record_dir = config["record_dir"]
         self.__dealer_config = config.get("dealer_config", {})
-        self.__start_min = config["start_min"]
-        self.__end_min = config["end_min"]
 
-    def __is_trade_time(self, time_obj):
+    def __is_trade_time(self, time_obj, code):
         if not time_obj.day in self.__trade_date:
-            return 1
-        if self.__today.month == self.__last.month and self.__today.year == self.__last.year:
-            return 2
-        if time_obj.weekday() == 5 or time_obj.weekday() == 6:
-            return 3
+            return False
 
-        starttime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " " + self.__start_min, "%Y-%m-%d %H:%M:%S")
-        endtime = datetime.datetime.strptime(time_obj.strftime("%Y-%m-%d") + " " + self.__end_min, "%Y-%m-%d %H:%M:%S")
-        if time_obj < starttime or time_obj > endtime:
-            return 4
-        return 0
+        if self.__last == "":
+            file_name = self.__record_dir + "/" + code + ".record"
+            if os.path.exists(file_name):
+                with open(file_name,'r') as f:
+                    res = json.loads(f.readline())
+                    self.__last = res["date"].encode("utf-8")
+            else:
+                self.__last = "2012-12"
+
+        sep = self.__last.split('-')
+        last_year = int(sep[0])
+        last_month = int(sep[1])
+
+        if self.__today.year == last_year and self.__today.month== last_month:
+            return False
+        if time_obj.weekday() == 5 or time_obj.weekday() == 6:
+            return False
+
+        return True
 
     def __get_net(self, code):
         url = "http://hq.sinajs.cn/list=" + code
@@ -61,7 +68,7 @@ class AIP():
 
     def __store_deal(self, deal):
         file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
-        print file_name
+        # print file_name
         with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
             f.write("\n")
         return
@@ -122,17 +129,16 @@ class AIP():
 
 
         if "email" in self.__dealer_config:
-
             for mail_address in self.__dealer_config["email"]:
                 # mail.sendhtmlmail([mail_address], title,mail_detail.encode("utf-8", "ignore"))
-
                 mail.sendhtmlmail(['sunada2005@163.com'], title,mail_detail.encode("utf-8", "ignore"))
-
         return
 
     def AIP_fixedMonthMoney(self):
         deal_list = []
         for cube_id in self.__cube_fixed:
+            if not self.__is_trade_time(datetime.datetime.now(), cube_id):
+                continue
             net = self.__get_net(cube_id)
             share = int(self.__month_money / net / 100) * 100
             deal = {}
@@ -141,6 +147,7 @@ class AIP():
             deal["share"] = share
             deal["action"] = "buy"
             deal["stock_name"] = self.__cube_fixed[cube_id]
+            deal["date"] = datetime.datetime.strftime(self.__today, "%Y-%m-%d")
             self.__store_deal(deal)
             self.__store_record(deal)
             deal_list.append(deal)
@@ -151,22 +158,11 @@ class AIP():
         return 1
 
     def AIP(self):
-        while True:
-            res = self.__is_trade_time(datetime.datetime.now())
-            print res
-            #res=1 表示不在定投日期内；2 表示该月已经定投；3 表示周末；4.表示不在定投日规则定投时间内；0表示可定投
-            if res == 1 or res == 2 or res == 3:
-                # break;
-                time.sleep(self.__timegap_day)
-                continue
-            elif res == 4:
-                time.sleep(self.__timegap_min)
-                continue
+        deal_list = self.AIP_fixedMonthMoney()
+        self.AIP_valueAvergaging()
 
-            deal_list = self.AIP_fixedMonthMoney()
-            self.AIP_valueAvergaging()
-
-            self.__last = self.__today
+        # self.__last = self.__today
+        if not deal_list != None:
             self.__send_mail(deal_list)
 
 if __name__ == "__main__":
