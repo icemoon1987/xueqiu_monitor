@@ -184,7 +184,7 @@ class AIP():
         with open(filename) as f:
             line = f.readlines()[-1]
             print line
-        
+
 
     def save_val_api_sum(self,deal):
         #第n期|日期|stock_id|名称|买入价格|当月投入|累计投入|定投当月份额|定投累计份额|
