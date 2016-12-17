@@ -175,7 +175,7 @@ class AIP():
 
     def AIP_valueAvergaging(self):
         self.__logger.info("AIP_valueAvergaging start")
-        deal_list = []
+        # deal_list = []
         # for cube_id in self.__cube_value:
         #     if not self.__is_trade_time(cube_id):
         #
