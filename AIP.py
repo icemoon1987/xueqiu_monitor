@@ -9,7 +9,6 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 import json
 import datetime
-import time
 import urllib2
 import mail
 import os
