@@ -34,6 +34,11 @@ class AIP():
         self.__log_dir = config["log_dir"]
         self.__record_dir = config["record_dir"]
         self.__dealer_config = config.get("dealer_config", {})
+        self.__value_gap = config["value_gap"]
+        self.__deal_rate = config["deal_rate"]
+        self.__expect_rate = config["expect_rate"]
+        self.__max_gap = config["max_gap"]
+        self.__deal_list = []
 
         if not os.path.exists(self.__log_dir):
             os.mkdir(self.__log_dir)
@@ -47,15 +52,15 @@ class AIP():
         logging.basicConfig(level=logging.DEBUG, filename="%s.log.%s" % (os.path.join(self.__log_dir, 'AIP'), datetime.datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
         self.__logger = logging.getLogger(__name__)
 
-    def __is_trade_time(self, code):
+    def __is_trade_time(self, stcok_id):
         time_obj = datetime.datetime.now()
         if not time_obj.day in self.__trade_date:
-            self.__logger.info(code + " is not int trade days")
+            self.__logger.info(stcok_id + " is not int trade days")
             return False
 
         if self.__last == "":
-            # file_name = self.__record_dir + "/" + code + ".record"
-            file_name = os.path.join(self.__record_dir, code + ".record")
+            # file_name = self.__record_dir + "/" + stcok_id + ".record"
+            file_name = os.path.join(self.__record_dir, stcok_id + ".record")
             if os.path.exists(file_name):
                 with open(file_name,'r') as f:
                     res = json.loads(f.readline())
@@ -67,18 +72,18 @@ class AIP():
         last_year = int(sep[0])
         last_month = int(sep[1])
 
-        if self.__today.year == last_year and self.__today.month== last_month:
-            self.__logger.info(code + " has been invested this month.")
-            return False
+        # if self.__today.year == last_year and self.__today.month== last_month:
+        #     self.__logger.info(stcok_id + " has been invested this month.")
+        #     return False
 
-        if time_obj.weekday() == 5 or time_obj.weekday() == 6:
-            self.__logger.info(code + "Today is not work day.")
-            return False
+        # if time_obj.weekday() == 5 or time_obj.weekday() == 6:
+        #     self.__logger.info(stcok_id + "Today is not work day.")
+        #     return False
 
         return True
 
-    def __get_net(self, code):
-        url = "http://hq.sinajs.cn/list=" + code
+    def __get_net(self, stcok_id):
+        url = "http://hq.sinajs.cn/list=" + stcok_id
         res = urllib2.urlopen(url)
         line = res.read()
         sep = line.split(',')
@@ -152,42 +157,93 @@ class AIP():
                 mail.sendhtmlmail(['sunada2005@163.com'], title,mail_detail.encode("utf-8", "ignore"))
         return
 
+    def make_deal(self,cube_id, amount):
+        net = self.__get_net(cube_id)
+        share = int(amount / net / 100) * 100
+        deal = {}
+        deal["stock_id"] = cube_id
+        deal["price"] = net
+        deal["share"] = share
+        deal["amount"] = net * share
+        deal["action"] = "buy"
+        deal["date"] = datetime.datetime.strftime(self.__today, "%Y-%m-%d")
+        return deal
+
+    def read_value_aip_sum(self, stock_id):
+        filename = os.path.join(self.__record_dir, stock_id + ".sum")
+        if not os.path.exists(filename):
+            return None
+        with open(filename) as f:
+            return f.readlines(filename)[-1]
+
+    def cal_val_api_amount(self, cube_id):
+        filename = os.path.join(self.__record_dir,cube_id + ".sum")
+        if not os.path.exists(filename):
+            return
+
+        with open(filename) as f:
+            line = f.readlines()[-1]
+            print line
+        
+
+    def save_val_api_sum(self,deal):
+        #第n期|日期|stock_id|名称|买入价格|当月投入|累计投入|定投当月份额|定投累计份额|
+        record = {}
+        record["stock_id"] = deal["stock_id"]
+        record["stock_name"] = deal["stock_name"]
+        record["date"] = deal["date"]
+        record["price"] = deal["price"]
+        record["month_share"] = deal["share"]
+        record["month_amount"] = deal["amount"]
+        record["sum_share"] = record["month_share"]
+        record["sum_amount"] = record["month_amount"]
+        record["id"] = 1
+        last_record = self.read_value_aip_sum(deal["stock_id"])
+        if last_record != None:
+            record["sum_share"] += last_record["month_share"]
+            record["sum_amount"] += last_record["month_amount"]
+            record["id"] = last_record["id"] + 1
+
+        with open(os.path.join(self.__record_dir, deal["stock_id"] + ".sum"), "a") as f:
+            f.write(json.dumps(record))
+        f.write("\n")
+
     def AIP_fixedMonthMoney(self):
         self.__logger.info("AIP_fixedMonthMoney start")
         deal_list = []
         for cube_id in self.__cube_fixed:
             if not self.__is_trade_time(cube_id):
-                continue
-            net = self.__get_net(cube_id)
-            share = int(self.__month_money / net / 100) * 100
-            deal = {}
-            deal["stock_id"] = cube_id
-            deal["price"] = net
-            deal["share"] = share
-            deal["action"] = "buy"
+                break
+            deal = self.make_deal(cube_id, self.__month_money)
             deal["stock_name"] = self.__cube_fixed[cube_id]
-            deal["date"] = datetime.datetime.strftime(self.__today, "%Y-%m-%d")
             self.__store_deal(deal)
             self.__store_record(deal)
-            deal_list.append(deal)
-
-        return deal_list
+            self.__deal_list.append(deal)
+        return self.__deal_list
 
     def AIP_valueAvergaging(self):
         self.__logger.info("AIP_valueAvergaging start")
-        # deal_list = []
-        # for cube_id in self.__cube_value:
-        #     if not self.__is_trade_time(cube_id):
-        #
-        return 1
+        deal_list = []
+        for cube_id in self.__cube_value:
+            if not self.__is_trade_time(cube_id):
+                break
+            amount = self.cal_val_api_amount(cube_id)
+            month_amount = self.__value_gap if amount == None else amount
+            deal = self.make_deal(cube_id, month_amount)
+            deal["name"] = self.__cube_value[cube_id]
+            self.__store_deal(deal)
+            self.__store_record(deal)
+            self.__deal_list.append(deal)
+            self.__save_val_api_sum(deal)
+        return self.__deal_list
 
     def AIP(self):
-        deal_list = self.AIP_fixedMonthMoney()
+        self.AIP_fixedMonthMoney()
         self.AIP_valueAvergaging()
 
         # self.__last = self.__today
-        if not deal_list != None:
-            self.__send_mail(deal_list)
+        if not self.__deal_list != None:
+            self.__send_mail(self.__deal_list)
 
 if __name__ == "__main__":
     aip = AIP()
