@@ -13,6 +13,7 @@ import time
 import urllib2
 import mail
 import os
+import logging
 
 class AIP():
     def __load_config_file(self, filename):
@@ -35,12 +36,26 @@ class AIP():
         self.__record_dir = config["record_dir"]
         self.__dealer_config = config.get("dealer_config", {})
 
+        if not os.path.exists(self.__log_dir):
+            os.mkdir(self.__log_dir)
+
+        if not os.path.exists(self.__record_dir):
+            os.mkdir(self.__record_dir)
+
+        if not os.path.exists(self.__deal_dir):
+            os.mkdir(self.__deal_dir)
+
+        logging.basicConfig(level=logging.DEBUG, filename="%s.log.%s" % (os.path.join(self.__log_dir, 'AIP'), datetime.datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
+        self.__logger = logging.getLogger(__name__)
+
     def __is_trade_time(self, time_obj, code):
         if not time_obj.day in self.__trade_date:
+            self.__logger.info(code + " is not int trade days")
             return False
 
         if self.__last == "":
-            file_name = self.__record_dir + "/" + code + ".record"
+            # file_name = self.__record_dir + "/" + code + ".record"
+            file_name = os.path.join(self.__record_dir, code + ".record")
             if os.path.exists(file_name):
                 with open(file_name,'r') as f:
                     res = json.loads(f.readline())
@@ -53,8 +68,11 @@ class AIP():
         last_month = int(sep[1])
 
         if self.__today.year == last_year and self.__today.month== last_month:
+            self.__logger.info(code + " has been invested this month.")
             return False
+
         if time_obj.weekday() == 5 or time_obj.weekday() == 6:
+            self.__logger.info(code + "Today is not work day.")
             return False
 
         return True
@@ -69,7 +87,7 @@ class AIP():
     def __store_deal(self, deal):
         file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
         # print file_name
-        with open("%s/%s" % (self.__deal_dir, file_name), "w") as f:
+        with open("%s/%s" % (self.__deal_dir, file_name[2:]), "w") as f:
             f.write("\n")
         return
 
@@ -135,6 +153,7 @@ class AIP():
         return
 
     def AIP_fixedMonthMoney(self):
+        self.__logger.info("AIP_fixedMonthMoney start")
         deal_list = []
         for cube_id in self.__cube_fixed:
             if not self.__is_trade_time(datetime.datetime.now(), cube_id):

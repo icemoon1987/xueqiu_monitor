@@ -6,7 +6,7 @@
         "pwd" : "",
         "postfix" : "163.com"
     },
-    "month_money":300,
+    "month_money":2000,
     "cube_fixed":
     {
         "sh510880":"红利ETF",
@@ -16,7 +16,7 @@
     {
         "sz159915":"创业板"
     },
-    "trade_date":"13,14,15,16,17,18",
+    "trade_date":"16,17,18,19,20",
     "deal_dir":"./deal",
     "log_dir": "./log",
     "record_dir": "./record",
