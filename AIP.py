@@ -47,7 +47,8 @@ class AIP():
         logging.basicConfig(level=logging.DEBUG, filename="%s.log.%s" % (os.path.join(self.__log_dir, 'AIP'), datetime.datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
         self.__logger = logging.getLogger(__name__)
 
-    def __is_trade_time(self, time_obj, code):
+    def __is_trade_time(self, code):
+        time_obj = datetime.datetime.now()
         if not time_obj.day in self.__trade_date:
             self.__logger.info(code + " is not int trade days")
             return False
@@ -155,7 +156,7 @@ class AIP():
         self.__logger.info("AIP_fixedMonthMoney start")
         deal_list = []
         for cube_id in self.__cube_fixed:
-            if not self.__is_trade_time(datetime.datetime.now(), cube_id):
+            if not self.__is_trade_time(cube_id):
                 continue
             net = self.__get_net(cube_id)
             share = int(self.__month_money / net / 100) * 100
@@ -173,6 +174,11 @@ class AIP():
         return deal_list
 
     def AIP_valueAvergaging(self):
+        self.__logger.info("AIP_valueAvergaging start")
+        deal_list = []
+        # for cube_id in self.__cube_value:
+        #     if not self.__is_trade_time(cube_id):
+        #
         return 1
 
     def AIP(self):
