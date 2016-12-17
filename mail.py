@@ -63,7 +63,9 @@ def sendhtmlmail(to_list,subject,content):
 	return True
 
 if __name__ == '__main__':
-	if sendmail(['546674175@qq.com'],"测试邮件","测试python发送网易邮件"):
+	if sendmail(['546674175@qq.com'],"申请数据邮件","python发送邮件，发到我自己的邮箱，不知道为什么就被识别为垃圾邮件了。"):
 		print "Success!"
 	else:
 		print "Fail!"
+
+
