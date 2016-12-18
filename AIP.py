@@ -91,9 +91,10 @@ class AIP():
 
     def __store_deal(self, deal):
         file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
-        # print file_name
-        with open("%s/%s" % (self.__deal_dir, file_name[2:]), "w") as f:
-            f.write("\n")
+        # print file_name[:8]
+        if file_name[:8] != "sh159915":
+            with open("%s/%s" % (self.__deal_dir, file_name[2:]), "w") as f:
+                f.write("\n")
         return
 
     def __store_record(self, deal):
