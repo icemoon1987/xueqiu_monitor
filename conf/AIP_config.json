@@ -16,6 +16,10 @@
     {
         "sz159915":"创业板"
     },
+    "value_gap":2500,
+    "deal_rate":0.0002,
+    "expect_rate":0.02,
+    "max_gap":10000,
     "trade_date":"16,17,18,19,20",
     "deal_dir":"./deal",
     "log_dir": "./log",

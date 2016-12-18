@@ -159,13 +159,14 @@ class AIP():
 
     def make_deal(self,cube_id, amount):
         net = self.__get_net(cube_id)
-        share = int(amount / net / 100) * 100
         deal = {}
+        deal["action"] = "buy" if amount >= 0 else "sell"
+        amount = amount if amount >= 0 else amount * (-1)
+        share = int(amount / net / 100) * 100
         deal["stock_id"] = cube_id
         deal["price"] = net
         deal["share"] = share
         deal["amount"] = net * share
-        deal["action"] = "buy"
         deal["date"] = datetime.datetime.strftime(self.__today, "%Y-%m-%d")
         return deal
 
@@ -174,7 +175,8 @@ class AIP():
         if not os.path.exists(filename):
             return None
         with open(filename) as f:
-            return f.readlines(filename)[-1]
+            lines = f.readlines()
+            return json.loads(lines[-1])
 
     def cal_val_api_amount(self, cube_id):
         filename = os.path.join(self.__record_dir,cube_id + ".sum")
@@ -183,30 +185,38 @@ class AIP():
 
         with open(filename) as f:
             line = f.readlines()[-1]
-            print line
-
+            net = self.__get_net(cube_id)
+            # print "cal_val_api_amount", line
+            #第n期|日期|stock_id|名称|买入价格|当月投入|累计投入|定投当月份额|定投累计份额|
+            record = json.loads(line)
+            expect_amount = float(record["sum_amount"]) * (1 + self.__expect_rate) + self.__value_gap
+            month_amount = expect_amount - int(record["sum_share"]) * net
+            month_amount = month_amount if month_amount < self.__max_gap else self.__max_gap
+            month_amount = month_amount if month_amount > self.__max_gap * (-1) else self.__max_gap * (-1)
+            return month_amount
 
     def save_val_api_sum(self,deal):
         #第n期|日期|stock_id|名称|买入价格|当月投入|累计投入|定投当月份额|定投累计份额|
         record = {}
         record["stock_id"] = deal["stock_id"]
-        record["stock_name"] = deal["stock_name"]
+        record["name"] = deal["name"]
         record["date"] = deal["date"]
-        record["price"] = deal["price"]
-        record["month_share"] = deal["share"]
-        record["month_amount"] = deal["amount"]
-        record["sum_share"] = record["month_share"]
-        record["sum_amount"] = record["month_amount"]
+        record["price"] = float(deal["price"])
+        record["month_share"] = int(deal["share"])
+        record["month_amount"] = float(deal["amount"])
+        record["sum_share"] = int(record["month_share"])
+        record["sum_amount"] = float(record["month_amount"])
         record["id"] = 1
         last_record = self.read_value_aip_sum(deal["stock_id"])
         if last_record != None:
-            record["sum_share"] += last_record["month_share"]
-            record["sum_amount"] += last_record["month_amount"]
-            record["id"] = last_record["id"] + 1
+            record["sum_share"] = int(last_record["sum_share"]) + record["sum_share"] if deal["action"] == "buy" else int(last_record["sum_share"]) - record["sum_share"]
+            record["sum_amount"] = float(last_record["sum_amount"]) + record["sum_amount"] if deal["action"] == "buy" else float(last_record["sum_amount"]) - record["sum_amount"]
+            record["id"] = int(last_record["id"]) + 1
 
         with open(os.path.join(self.__record_dir, deal["stock_id"] + ".sum"), "a") as f:
             f.write(json.dumps(record))
-        f.write("\n")
+            f.write("\n")
+            f.close()
 
     def AIP_fixedMonthMoney(self):
         self.__logger.info("AIP_fixedMonthMoney start")
@@ -234,7 +244,7 @@ class AIP():
             self.__store_deal(deal)
             self.__store_record(deal)
             self.__deal_list.append(deal)
-            self.__save_val_api_sum(deal)
+            self.save_val_api_sum(deal)
         return self.__deal_list
 
     def AIP(self):
