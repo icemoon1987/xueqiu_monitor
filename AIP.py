@@ -72,13 +72,13 @@ class AIP():
         last_year = int(sep[0])
         last_month = int(sep[1])
 
-        # if self.__today.year == last_year and self.__today.month== last_month:
-        #     self.__logger.info(stcok_id + " has been invested this month.")
-        #     return False
+        if self.__today.year == last_year and self.__today.month== last_month:
+            self.__logger.info(stcok_id + " has been invested this month.")
+            return False
 
-        # if time_obj.weekday() == 5 or time_obj.weekday() == 6:
-        #     self.__logger.info(stcok_id + "Today is not work day.")
-        #     return False
+        if time_obj.weekday() == 5 or time_obj.weekday() == 6:
+            self.__logger.info(stcok_id + "Today is not work day.")
+            return False
 
         return True
 
