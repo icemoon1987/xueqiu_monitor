@@ -1,0 +1,25 @@
+{
+    "mail_config":
+    {
+		"host" : "smtp.163.com",
+		"user" : "panwenhai1987",
+		"pwd" : "",
+		"postfix" : "163.com"
+    },
+
+    "log_dir": "./log",
+    "record_dir": "./record",
+    "deal_dir": "./deal",
+    "record_filename":"small_market_value.record",
+    "period":20,
+
+    "dealer_config" :
+    {
+        "email": ["516563458@qq.com"],
+        "amount":30000,
+        "stock_cnt":5,
+        "stock_amount":10000000
+    }
+}
+
+
