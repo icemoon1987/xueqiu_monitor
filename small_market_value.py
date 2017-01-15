@@ -60,7 +60,8 @@ class Small_Market:
         # print(self.__target)
 
     def next_date(self):
-        with open(os.path.join(self.__record_dir,self.__record_filename), 'r') as f:
+        tmp = os.path.join(self.__record_dir, self.__record_filename) + '.record'
+        with open(tmp, 'r') as f:
             lines = f.readlines()
             line = lines[-1]
             deal = json.loads(line)
@@ -71,6 +72,29 @@ class Small_Market:
                 while not util.is_trade_date(next_date):
                     next_date += datetime.timedelta(days=1)
             return next_date
+
+    def get_last_records(self):
+        tmp = os.path.join(self.__record_dir, self.__record_filename) + '.record'
+        with open(tmp, 'r') as f:
+            lines = f.readlines()
+            last_records = lines[-5:]
+            last_stock_ids = []
+            for record in last_records:
+                last_stock_ids.append(json.loads(record)['stock_id'])
+            return last_stock_ids
+
+    def get_target_code(self):
+        current_stocks = []
+        for i in range(self.__cnt):
+            current_stocks.append(str(self.__target.iloc[i]['code']))
+        return current_stocks
+
+    def get_buys_sells(self):
+        target_codes = self.get_target_code()
+        last_records = self.get_last_records()
+        sells = [code for code in last_records if code not in target_codes]
+        buys = [code for code in target_codes if code not in last_records]
+        return(buys, sells)
 
     def small_market(self):
         self.get_target()
@@ -84,8 +108,10 @@ class Small_Market:
             deal['share'] = str(tmp['share'])
             deal['date'] = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
             deal['action'] = 'buy'
-            util.store_deal(deal, self.__deal_dir)
-            util.store_record(deal, self.__record_dir,self.__record_filename)
+            # util.store_deal(deal, self.__deal_dir)
+            # util.store_record(deal, self.__record_dir,self.__record_filename)
+        (buys, sells) = self.get_buys_sells()
+
 
 
 if __name__ == "__main__":
