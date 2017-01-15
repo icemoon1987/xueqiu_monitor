@@ -3,14 +3,15 @@ import json
 import datetime
 
 def store_deal(deal,deal_dir):
-    file_name = deal["stock_id"] + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
-    # print file_name[:8]
-    with open("%s/%s" % (deal_dir, file_name[2:]), "w") as f:
+    file_name = str(deal["stock_id"]) + "_" + str(deal["price"]) + "_" + str(deal["share"]) + "_" + str(deal["action"])
+    if file_name.startswith("sh") or file_name.startswith("sz"):
+        file_name = file_name[2:]
+    with open("%s/%s" % (deal_dir, file_name), "w") as f:
         f.write("\n")
     return
 
-def store_record(deal, record_dir):
-    with open("%s.record" % (record_dir), "a") as f:
+def store_record(deal, record_dir,record_filename):
+    with open("%s/%s.record" % (record_dir,record_filename), "a") as f:
         f.write(json.dumps(deal))
         f.write("\n")
     return

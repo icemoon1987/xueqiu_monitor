@@ -38,7 +38,7 @@ class Small_Market:
         logging.basicConfig(level=logging.DEBUG, filename="%s.log.%s" % (os.path.join(self.__log_dir, 'small_market_value'), datetime.datetime.now().strftime("%Y%m%d")), filemode='a', format='%(asctime)s [%(levelname)s] [%(lineno)d] %(message)s')
         self.__logger = logging.getLogger(__name__)
 
-    def target(self):
+    def get_target(self):
         # lc = ts.get_today_all()
         # lc.to_csv('a.txt',encoding="utf-8")
         lc = pd.read_csv('a.txt',encoding='utf-8')
@@ -49,14 +49,15 @@ class Small_Market:
         # res = res[['code','name','trade','amount']]
         self.__target = res[['code','name','trade']]
         self.__target['share'] = 0
+        self.__target['action'] = ''
 
-    def deal_target(self):
+    def cal_share(self):
         for i in range(self.__cnt):
             s = self.__target.iloc[i]
             trade = s['trade']
             share = int((self.__amount_per_stock / 100) / trade) * 100
             self.__target.iloc[i, 3] = share
-        print(self.__target)
+        # print(self.__target)
 
     def next_date(self):
         with open(os.path.join(self.__record_dir,self.__record_filename), 'r') as f:
@@ -71,12 +72,28 @@ class Small_Market:
                     next_date += datetime.timedelta(days=1)
             return next_date
 
+    def small_market(self):
+        self.get_target()
+        self.cal_share()
+        for i in range(self.__cnt):
+            self.__target.iloc[i, 4] = 'buy'
+            tmp = self.__target.iloc[i]
+            deal = {}
+            deal['stock_id'] = str(tmp['code'])
+            deal['price'] = str(tmp['trade'])
+            deal['share'] = str(tmp['share'])
+            deal['date'] = datetime.datetime.strftime(datetime.datetime.today(), "%Y-%m-%d")
+            deal['action'] = 'buy'
+            util.store_deal(deal, self.__deal_dir)
+            util.store_record(deal, self.__record_dir,self.__record_filename)
+
 
 if __name__ == "__main__":
     sm = Small_Market()
-    target = sm.target()
-    sm.deal_target()
-    print(sm.next_date())
+    sm.small_market()
+    # sm.get_target()
+    # sm.cal_share()
+    # print(sm.next_date())
 
 
 
