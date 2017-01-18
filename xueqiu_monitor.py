@@ -27,11 +27,8 @@ class XueqiuMonitor(object):
         with open(config_file, "r") as f:
             return json.loads(f.read())
 
-
     def __init__(self):
-
         config_json = self.__load_config_file("./conf/config.json")
-
         self.__cube_map = config_json["cubes"]
         self.__log_dir = config_json.get("log_dir", "./log")
         self.__timestamp_dir = config_json.get("timestamp_dir", "./timestamps")

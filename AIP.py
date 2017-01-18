@@ -242,7 +242,7 @@ class AIP():
             month_amount = self.__value_gap if amount == None else amount
             deal = self.make_deal(cube_id, month_amount)
             deal["name"] = self.__cube_value[cube_id]
-            self.__store_deal(deal)
+            # self.__store_deal(deal)
             self.__store_record(deal)
             self.__deal_list.append(deal)
             self.save_val_api_sum(deal)
